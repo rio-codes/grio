@@ -1,25 +1,52 @@
 import datetime
-import argparse
+import configparser
 
 from scp import SCPClient
 from paramiko import SSHClient
 
-timestamp = datetime.now()
-parser = argparse.ArgumentParser(description='Post short updates to a microblog on a remote server')
+def config():
+    import configparser
 
-parser.add_argument('post', metavar = 'post', help = 'the content of the post', required=True)
+    configFile = configparser.ConfigParser()
+    configFile.add_section('SSHSettings')
 
-args = parser.parse_args()
+    configFile.set('SSHSettings', 'server', server)
+    configFile.set('SSHSettings', 'port', port)
 
-with open('grioblog.txt') as f:
-    t = f.readlines()
-    t.append(post)
+    with open('grio.conf', 'w') as configFileObj:
+        configFile.write(configFileObj)
+        configFileObj.flush()
+        configFileObj.close()
 
-with open('grioblog.txt', 'w') as f:
-    f.writelines(t)
+def cli():
+    import argparse
 
-ssh = SSHClient()
-ssh.load_system_host_keys()
-ssh.connect('rio.pink')
+    parser = argparse.ArgumentParser(description='Post short updates to a microblog on a remote server')
 
-scp = SCPClient(ssh.get_transport())
+    parser.add_argument('post', metavar = 'post', help = 'the content of the post', required=True)
+    parser.add_argument('-c', '--config', metavar = 'config', help = 'set up configuration file', default=False, required=False)
+    parser.add_argument('-s', '--server', metavar = 'server', help = 'the server to upload the post to', required=False)
+    parser.add_argument('-p', '--port', metavar = 'port', help = 'the ssh port on the web server', required=False)
+
+    args = parser.parse_args()
+
+def main():
+    timestamp = datetime.now()
+
+    open("grioblog.txt", "a")
+
+    with open('grioblog.txt') as f:
+        post = f.readlines()
+        t.append(timestamp + post)
+
+    with open('grioblog.txt', 'w') as f:
+        f.writelines(t)
+
+    #ssh = SSHClient()
+    #ssh.load_system_host_keys()
+    #ssh.connect('rio.pink')
+
+    #scp = SCPClient(ssh.get_transport())
+
+if __name__ == "__main__":
+    main()
