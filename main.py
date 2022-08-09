@@ -37,10 +37,11 @@ def cli():
     args = parser.parse_args()
 
     return args
-
 def post(content):
+    time = str(datetime.datetime.now())
 
-# insert post() function
+    with open('grioblog.txt', 'a') as file:
+        file.write(time + ' || ' + content + '\n')
 
 def main():
     config = configparser.ConfigParser()
