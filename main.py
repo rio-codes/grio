@@ -39,29 +39,8 @@ def cli():
     return args
 
 def post(content):
-    timestamp = str(datetime.datetime.now())
-    with open('grioblog.txt', 'a+') as f:
-        lines = f.readlines()
-        print("lines at top:")
-        print(lines)
-#        f.close()
-#    with open('grioblog.txt', 'a+') as f:
-        if not lines:
-            print("writing temp line")
-            f.write("This is the first line")
-        f.close()
-    with open('grioblog.txt', 'a+') as f:
-        lines = f.readlines()
-        print("next lines:")
-        print(lines)
-        f.write(timestamp + ' || ' + content + '\n')
-        for line in reversed(lines):
-            print("checking line")
-            f.write(line)
-#    n.close()
-        f.close()
- #   os.rename('grioblog.txt', 'grioblog_old.txt')
- #   os.rename('grioblog_new.txt', 'grioblog.txt')
+
+# insert post() function
 
 def main():
     config = configparser.ConfigParser()
