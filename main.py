@@ -39,8 +39,9 @@ def cli():
     return args
 
 def post(content):
-
-# insert post() function
+time = str(datetime.datetime.now())
+with open('grioblog.txt', 'a') as file:
+    file.write(time +' || '+ content +'\n')
 
 def main():
     config = configparser.ConfigParser()
