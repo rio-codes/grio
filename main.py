@@ -28,9 +28,7 @@ def cli():
     postParser = subparsers.add_parser('post')
     configParser = subparsers.add_parser('config')
 
-#    postParser.add_argument('post', help = 'post to grio')
     postParser.add_argument('post', action = 'store', nargs='?', help = 'the content of the post')
-    configParser.add_argument('config', help = 'set up configuration file')
     configParser.add_argument('-s', '--server', help = 'the server to upload the post to', required=True)
     configParser.add_argument('-p', '--port', help = 'the ssh port on the web server', required=True)
 
@@ -39,9 +37,9 @@ def cli():
     return args
 
 def post(content):
-time = str(datetime.datetime.now())
-with open('grioblog.txt', 'a') as file:
-    file.write(time +' || '+ content +'\n')
+    time = str(datetime.datetime.now())
+    with open('grioblog.txt', 'a') as file:
+        file.write(time +' || '+ content +'\n')
 
 def main():
     config = configparser.ConfigParser()
@@ -53,7 +51,11 @@ def main():
             config.read('grio.conf')
             server = config['SSHSettings']['server']
             port = config['SSHSettings']['server']
-            post(args.post)
+            if os.path.exists('grioblog.txt'):
+                post(args.post)
+            else:
+                open('grioblog.txt', "a")
+                post(args.post)
         else:
             print('No config file found, run "grio config" to setup')
             sys.exit()
