@@ -2,4 +2,4 @@
 Wants=griod.service
 
 [Path]
-PathChanged=/home/rio/grioblog.csv
+PathChanged=/home/***/grioblog.csv

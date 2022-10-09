@@ -5,25 +5,20 @@ import sys
 import configparser
 import scp
 import paramiko
-
 from scp import SCPClient
 from paramiko import SSHClient
 
 def cli():
 	parser = argparse.ArgumentParser(description='Post short updates to a microblog on a remote server')
 	subparsers = parser.add_subparsers(help = 'post or configure grio', dest='command')
-
 	postParser = subparsers.add_parser('post')
 	configParser = subparsers.add_parser('config')
-
 	postParser.add_argument('post', action = 'store', nargs='?', help = 'the content of the post')
 	configParser.add_argument('-s', '--server', help = 'the server to upload the post to', required=True)
 	configParser.add_argument('-p', '--port', help = 'the ssh port on the web server', required=True)
 	configParser.add_argument('-u', '--user', help = 'your ssh username on the web server', required=True)
 	configParser.add_argument('-P', '--password', help = 'your ssh password on the web server', required=True)
-
 	args = parser.parse_args()
-
 	return args
 
 def createSSHClient(server, port, user, password):
@@ -40,23 +35,28 @@ def config():
 	configFile.set('SSHSettings', 'port', port)
 	configFile.set('SSHSettings', 'user', user)
 	configFile.set('SSHSettings', 'password', password)
-
 	with open('grio.conf', 'w') as configFileObj:
 		configFile.write(configFileObj)
 		configFileObj.flush()
 		configFileObj.close()
 
-def post(content, ssh):
+def defineGriodService():
+	# add code to modify service and path files with username for upload
+
+def post(user, content, ssh):
+	scp = SCPClient(ssh.get_transport())
 	time = str(datetime.datetime.now())
 	with open('grioblog.csv', 'a') as file:
 		file.write(time + ','  + content + '\n')
-	scp = SCPClient(ssh.get_transport())
-	scp.put('grioblog.csv')
+	_stdin, _stdout,_stderr = ssh.exec_command('export GUSER ' + user)
+	ssh.exec_command('mkdir -p /home/' + user + '/grio/service/')
+	scp.put('../server-side/service', recursive=True, remote_path='/home/' + user + '/grio/')
+	scp.put('home/ + user + "/grio/grioblog.csv")
+	scp.close()
 
 def main():
 	configParser = configparser.ConfigParser()
 	args = cli()
-
 	if args.command == 'post':
 		if os.path.exists('grio.conf'):
 			configParser.read('grio.conf')
@@ -65,12 +65,11 @@ def main():
 			user = configParser['SSHSettings']['user']
 			password = configParser['SSHSettings']['password']
 			ssh = createSSHClient(server,port,user,password)
-
 			if os.path.exists('grioblog.txt'):
-				post(args.post, ssh)
+				post(user, args.post, ssh)
 			else:
 				open('grioblog.txt', "a")
-				post(args.post, ssh)
+				post(user, args.post, ssh)
 		else:
 			print('No config file found, run "grio config" to setup')
 			sys.exit()
