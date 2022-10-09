@@ -1,0 +1,5 @@
+[Unit]
+Wants=griod.service
+
+[Path]
+PathChanged=/home/rio/grioblog.csv
