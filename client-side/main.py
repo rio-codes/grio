@@ -49,7 +49,7 @@ def config():
 def post(content, ssh):
 	time = str(datetime.datetime.now())
 	with open('grioblog.csv', 'a') as file:
-		file.write(time+','+content+'\n')
+		file.write(time + ','  + content + '\n')
 	scp = SCPClient(ssh.get_transport())
 	scp.put('grioblog.csv')
 
@@ -83,8 +83,6 @@ def main():
 
 	with open('grio.conf', 'w') as configFile:
 		configParser.write(configFile)
-
-	
 
 if __name__ == "__main__":
 	main() 
