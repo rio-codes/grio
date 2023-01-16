@@ -1,0 +1,28 @@
+/* This works for my customized hugo-generated site with a tweaked risotto theme, you may need to mess with it for your purposes */
+
+.grio__logo {
+    height: 1rem;
+    padding-right: 10px;
+}
+
+.grio__title {
+    font-size: 1.5rem;
+    line-height: 1rem;
+    padding: 0;
+}
+
+.grio__post {
+    padding: 0;
+    line-height: 1rem;
+    font-size: 1rem;
+}
+.grio__timestamp {
+    line-height: 1rem;
+    font-size: .7rem;
+    text-align: right;
+}
+.grio__content {
+    margin: 0;
+    padding: 0;
+    height: 2rem; 
+}

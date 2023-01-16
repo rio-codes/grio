@@ -3,6 +3,6 @@ $.get('grioblog.csv', function(data) {
     var lastPost = (posts[posts.length - 1].split(','));
     var timeNow = jQuery.timeago(new Date()); 
     var timeSince= jQuery.timeago(lastPost[0]); 
-    $('.post').append('Time since post: ' + timeSince + '<br>');
-    $('.post').append('The post: ' + lastPost[1] + '<br>');
+    $('.grio__timestamp').append(timeSince + '<br>');
+    $('.grio__post').append(lastPost[1] + '<br>');
 });

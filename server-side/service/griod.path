@@ -1,5 +1,9 @@
 [Unit]
-Wants=griod.service
+Description="Monitor grioblog.csv for changes"
 
 [Path]
-PathChanged=/home/***/grioblog.csv
+PathModified=/home/$GRIO_USER/grioblog.csv
+Unit=griod.service
+
+[Install]
+WantedBy=multi-user.target
