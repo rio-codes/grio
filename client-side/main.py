@@ -1,39 +1,34 @@
-import datetime
-import argparse
 import os
 import sys
+import datetime
+import argparse
 import configparser
-import scp
 import paramiko
-import interactive
-from scp import SCPClient
-from paramiko import SSHClient
+from glob import glob
 
 def cli():
 	parser = argparse.ArgumentParser(description='Post short updates to a microblog on a remote server')
-	postParser = subparsers.add_parser('post')
-	configParser = subparsers.add_parser('config')
+	subparsers = parser.add_subparsers(title='subcommands', dest='subcommand')
+
+	configParser = subparsers.add_parser('config', help='Configuration settings')
+
 	configParser.add_argument('-s', '--server', help = 'the server to upload the post to', required=True)
 	configParser.add_argument('-p', '--port', help = 'the ssh port on the web server', required=True)
 	configParser.add_argument('-u', '--user', help = 'your ssh username on the web server', required=True)
-	configParser.add_argument('-k', '--hostkey', help = 'the path to your public key on the web server', required=False)
-	configParser.add_argument('-P', '--password', help = 'your ssh password on the web server', required=False)
 
-	authGroup = parser.add_mutually_exclusive_group(required=True)
-	authGroup.add_argument('-k', '--hostkey', help = 'the path to your public key on the web server', action='store_true')
-	authGroup.add_argument('-P', '--password', help = 'your ssh password on the web server', action='store_true')
-
+	postParser = subparsers.add_parser('post', help="Post an update to the server")
+	
 	args = parser.parse_args()
 	return args
 
-#def createSSHConnection(host, user, connect_kwargs={'key_filename': args.pkey} as connection)
-
-def createSSHClient(server, port, user, password):
-	client = paramiko.SSHClient()
-	client.load_host_keys()
-	client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-	client.connect(server, port, user, password)
-	return client
+def createSSHTransport(server, port, username, privatekey, password):
+	transport = paramiko.Transport((server, int(port)))
+	if privatekey != None:
+		privatekeyfile = paramiko.RSAKey.from_private_key_file(privatekey)
+		transport.connect(username=username, pkey=privatekeyfile)
+	else:
+		transport.connect(username=username, password=password)
+	return transport
 
 def config():
 	configFile = configparser.ConfigParser()
@@ -42,88 +37,68 @@ def config():
 	configFile.set('SSHSettings', 'port', port)
 	configFile.set('SSHSettings', 'user', user)
 	configFile.set('SSHSettings', 'password', password)
+	configFile.set('SSHSettings', 'privateKey', privateKey)
 	with open('grio.conf', 'w') as configFileObj:
 		configFile.write(configFileObj)
 		configFileObj.flush()
 		configFileObj.close()
 
-#def defineGriodService():
-	# add code to modify service and path files with username for upload
-
-def post(user, content, ssh):
-	
-	
-	scp = SCPClient(ssh.get_transport())
-	ime = str(datetime.datetime.now())
+def post(user, content, transport):
+	channel = transport.open_session()
+	time = str(datetime.datetime.now())
 	with open('grioblog.csv', 'a') as file:
 		file.write(time + ','  + content + '\n')
-	scp.put('grioblog.csv', remote_path='/home/' + user + '/grio/grioblog.csv')
-	scp.close()
-	
-	channel = ssh.get_transport().open_session()
-	channel.invoke_shell()
-	interactive.interactive_shell(channel)
-	if [[ ! -d '/home' + user + '/grio/service/' ]]; then 
-		mkdir -p '/home/' + user + '/grio/service/' 
-	fi
-	export GRIO_USER=user
-	
-	#_stdin, _stdout,_stderr = ssh.exec_command(echo "\'if [[ ! -d \'/home\' + user + \'/grio/service/\' ]]; then mkdir -p \'/home/\' + user + \'/grio/service/\'; fi")
-	#_stdin, _stdout,_stderr = ssh.exec_command(echo "\'export GRIO_USER=\' + user")
-	ssh.close()
-
-
-##### import ssh key
-# from paramiko import RSAKey
-# from paramiko.py3compat import decodebytes
-
-# client = SSHClient()
-
-# # known host key
-# know_host_key = "<KEY>"
-# keyObj = RSAKey(data=decodebytes(know_host_key.encode()))
-
-# # add to host keys
-# client.get_host_keys().add(hostname=HOST, keytype="ssh-rsa", key=keyObj)
-
-# # login to ssh hostname
-# client.connect(hostname=HOST, port=PORT, username=USER)...
-#####
+	channel.put('grioblog.csv', remote_path='/home/' + user + '/grio/grioblog.csv')
+	channel.exec_command("if [[ ! -d '/home' + user + '/grio/service/' ]]; then mkdir -p '/home/' + user + '/grio/service/'; fi")
+	channel.exec_command("export GRIO_USER=user")
+	channel.close()
+	transport.close()
 
 def main():
-
 	configParser = configparser.ConfigParser()
 	args = cli()
-
-	if args.command == 'post':
+	if args.subcommand == 'post':
+		content = input("What's on your mind? ")
 		if os.path.exists('grio.conf'):
 			configParser.read('grio.conf')
 			server = configParser['SSHSettings']['server']
 			port = configParser['SSHSettings']['port']
 			user = configParser['SSHSettings']['user']
 			password = configParser['SSHSettings']['password']
-			hostkey - configParser['SSHSettings']['hostkey']
-			hostString = user + '@' + server + ':' + port
-
-			ssh = createSSHClient(server,port,user,auth)
-			if os.path.exists('grioblog.txt'):
-				post(user, args.post, ssh)
-			else:
-				open('grioblog.txt', "a")
-				post(user, args.post, ssh)
+			privateKey = configParser['SSHSettings']['privateKey']
+			sshTransport = createSSHTransport(server, port, user, password, privateKey)
+			post(user, content, sshTransport)
 		else:
 			print('No config file found, run "grio config" to setup')
 			sys.exit()
-	elif args.command == 'config':
+	elif args.subcommand == 'config':
+		if os.path.exists('grio.conf'):
+			os.remove('grio.conf')
+		password = ""
+		privateKey = ""
 		configParser['SSHSettings'] = {}
 		configParser['SSHSettings']['server'] = args.server
 		configParser['SSHSettings']['port'] = args.port
 		configParser['SSHSettings']['user'] = args.user
-		configParser['SSHSettings']['password'] = args.password
-		configParser['SSHSettings']['hostkey'] = args.hostkey
-
+		keyPrompt = input("Does your web server require an SSH key? (Y/n)")
+		if keyPrompt == 'Y' or keyPrompt == 'y' or keyPrompt == '\n':
+			defaultLocation = os.path.expanduser("~/.ssh/")
+			privateKeys = glob(defaultLocation + "id_*")
+			if privateKeys:
+				print("Found the following private keys in the default location:")
+				for i, key in enumerate(privateKeys):
+					print(f"{i+1}. {key}")
+				userChoice = input("Select the private key you want to use (1-{}): ".format(len(privateKeys)))
+				privateKey = privateKeys[int(userChoice) - 1]
+			else:
+				privateKey = input("No private keys found in the default location. Please provide the path to your private key: ")
+		elif keyPrompt == 'n':
+			password = input("Enter your SSH password:")
+		configParser['SSHSettings']['password'] = password
+		configParser['SSHSettings']['privateKey'] = privateKey
 	with open('grio.conf', 'w') as configFile:
 		configParser.write(configFile)
+		print("Grio is configured, use \"grio post\" to post")
 
 if __name__ == "__main__":
 	main() 
