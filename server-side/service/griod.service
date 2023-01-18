@@ -3,7 +3,7 @@ Description="Copy grio file to /srv/http when changed"
 
 [Service]
 Type=simple
-ExecStart=/bin/sh -c "/bin/cp /home/$GRIO_USER/grioblog.csv /srv/http/'
+ExecStart=/bin/sh -c "/bin/cp /home/$GRIO_USER/grioblog.csv /srv/http/"
 
 [Install]
 WantedBy=default.target
